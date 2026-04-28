@@ -55,25 +55,51 @@ def lonlat_to_px(lat, lon):
     return (x, py)
 
 
-# 熱田台地のおおよその輪郭
+# 熱田台地（＝熱田面）の輪郭。大曽根面は別の洪積層として OZONE_POLYGON に分離
 PLATEAU_POLYGON = [
-    (35.198, 136.895), (35.198, 136.913), (35.180, 136.922),
-    (35.165, 136.928), (35.150, 136.928), (35.135, 136.920),
-    (35.123, 136.913), (35.123, 136.898), (35.140, 136.892),
-    (35.158, 136.890), (35.180, 136.890), (35.195, 136.892),
+    # 北部（名古屋城北側）— 名古屋城を北限寄りに
+    (35.192, 136.895),   # 名古屋城北西
+    (35.192, 136.913),   # 名古屋城北東
+    # 中央東部（栄〜千種〜矢場町〜上前津）
+    (35.180, 136.920),
+    (35.165, 136.925),
+    (35.150, 136.925),
+    (35.140, 136.920),
+    (35.130, 136.916),
+    # 南東端（メイテツコム熱田DC付近）
+    (35.125, 136.913),
+    # 南部（熱田神宮周辺）— 熱田神宮を南限寄りに
+    (35.124, 136.900),
+    # 西側（堀川沿い）
+    (35.135, 136.892),
+    (35.155, 136.890),
+    (35.180, 136.890),
+    (35.190, 136.892),
+]
+
+# 大曽根面（熱田台地ではないが、同じく洪積層）— 参考として淡色で表示
+OZONE_POLYGON = [
+    (35.205, 136.925),
+    (35.205, 136.943),
+    (35.185, 136.943),
+    (35.178, 136.938),
+    (35.172, 136.932),
+    (35.172, 136.928),
+    (35.180, 136.925),
+    (35.192, 136.923),
 ]
 
 LANDMARKS = [
-    ("名古屋城",  35.1856, 136.8997, "#c00000", (14, -10)),
-    ("名古屋駅",  35.1709, 136.8815, "#0050a0", (-130, -10)),
-    ("栄",        35.1707, 136.9088, "#1f7a1f", (14, -28)),
-    ("熱田神宮",  35.1280, 136.9075, "#c00000", (-110, -10)),
+    ("名古屋城",  35.1856, 136.8997, "#c00000", (16, -10)),
+    ("名古屋駅",  35.1709, 136.8815, "#0050a0", (-180, -10)),
+    ("栄",        35.1707, 136.9088, "#1f7a1f", (16, -36)),
+    ("熱田神宮",  35.1280, 136.9075, "#c00000", (-150, -14)),
 ]
 
 DATA_CENTERS = [
-    ("ctc 名古屋丸の内",   35.1810, 136.8965, "#7030a0", (14, 6)),
-    ("ctc 名古屋栄",       35.1690, 136.9075, "#7030a0", (14, 6)),
-    ("メイテツコム熱田DC", 35.1295, 136.9085, "#7030a0", (14, 16)),
+    ("ctc 名古屋丸の内",   35.1810, 136.8965, "#7030a0", (16, 8)),
+    ("ctc 名古屋栄",       35.1690, 136.9075, "#7030a0", (16, 8)),
+    ("メイテツコム熱田DC", 35.1265, 136.9110, "#7030a0", (16, 16)),
 ]
 
 HORIKAWA = [
@@ -121,21 +147,21 @@ def draw_label(draw, lat, lon, text, font, color, offset=(0, 0)):
 
 def draw_title(img, title, subtitle=None):
     draw = ImageDraw.Draw(img)
-    title_font = get_font(36, bold=True)
-    sub_font = get_font(22)
+    title_font = get_font(48, bold=True)
+    sub_font = get_font(28)
     draw.rectangle((0, 0, img.width, TITLE_BAND_H), fill=(245, 245, 248))
     draw.line((0, TITLE_BAND_H, img.width, TITLE_BAND_H), fill=(50, 50, 50), width=2)
-    draw.text((24, 12), title, fill="black", font=title_font)
+    draw.text((24, 8), title, fill="black", font=title_font)
     if subtitle:
-        draw.text((24, 54), subtitle, fill="#444444", font=sub_font)
+        draw.text((24, 64), subtitle, fill="#444444", font=sub_font)
 
 
 def draw_credit(img, text):
     draw = ImageDraw.Draw(img)
-    f = get_font(13)
+    f = get_font(18)
     bbox = draw.textbbox((0, 0), text, font=f)
     tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
-    pad = 6
+    pad = 8
     cx = img.width - tw - pad * 2 - 12
     cy = img.height - th - pad * 2 - 12
     draw.rectangle((cx, cy, cx + tw + pad * 2, cy + th + pad * 2),
@@ -143,23 +169,23 @@ def draw_credit(img, text):
     draw.text((cx + pad, cy + pad), text, fill="#222222", font=f)
 
 
-def draw_compass(img, x, y, size=80):
+def draw_compass(img, x, y, size=100):
     draw = ImageDraw.Draw(img)
-    f = get_font(18, bold=True)
-    draw.line((x, y - size // 2, x, y + size // 2), fill="black", width=3)
-    draw.line((x - size // 2, y, x + size // 2, y), fill="black", width=2)
-    draw.polygon([(x, y - size // 2 - 8), (x - 8, y - size // 2 + 4), (x + 8, y - size // 2 + 4)], fill="black")
-    draw.text((x - 6, y - size // 2 - 32), "N", fill="black", font=f, stroke_width=3, stroke_fill="white")
+    f = get_font(28, bold=True)
+    draw.line((x, y - size // 2, x, y + size // 2), fill="black", width=4)
+    draw.line((x - size // 2, y, x + size // 2, y), fill="black", width=3)
+    draw.polygon([(x, y - size // 2 - 12), (x - 12, y - size // 2 + 6), (x + 12, y - size // 2 + 6)], fill="black")
+    draw.text((x - 12, y - size // 2 - 50), "N", fill="black", font=f, stroke_width=4, stroke_fill="white")
 
 
 def draw_scale_bar(img, x, y, length_km=1.0):
     draw = ImageDraw.Draw(img)
     px_per_deg = abs(lonlat_to_px(35.150, 136.900)[1] - lonlat_to_px(35.160, 136.900)[1]) / 0.010
     bar_px = int(px_per_deg * (length_km / 111.0))
-    draw.rectangle((x, y, x + bar_px, y + 10), fill="black")
-    f = get_font(16, bold=True)
-    draw.text((x, y + 14), f"{length_km:g} km", fill="black", font=f,
-              stroke_width=3, stroke_fill="white")
+    draw.rectangle((x, y, x + bar_px, y + 14), fill="black")
+    f = get_font(22, bold=True)
+    draw.text((x, y + 18), f"{length_km:g} km", fill="black", font=f,
+              stroke_width=4, stroke_fill="white")
 
 
 def render_topographic_map():
@@ -169,7 +195,12 @@ def render_topographic_map():
     draw = ImageDraw.Draw(img)
     draw.rectangle((0, TITLE_BAND_H, IMG_W, IMG_H), fill=(190, 218, 240))
 
-    # 熱田台地を上に重ねる
+    # 大曽根面（参考：熱田台地ではないが同じく洪積層）を淡色で重ねる
+    draw_filled_polygon(img, OZONE_POLYGON,
+                        fill=(240, 220, 170, 255),
+                        outline=(170, 130, 60), outline_width=3)
+
+    # 熱田台地（熱田面）を上に重ねる
     draw_filled_polygon(img, PLATEAU_POLYGON,
                         fill=(255, 200, 110, 255),
                         outline=(180, 90, 0), outline_width=4)
@@ -181,69 +212,84 @@ def render_topographic_map():
     draw_river(draw, SHIN_HORIKAWA, color=(0, 100, 220), width=6)
 
     # 河川ラベル
-    river_font = get_font(22, bold=True)
-    draw_label(draw, 35.150, 136.880, "堀川", river_font, (0, 60, 160), offset=(0, -10))
-    draw_label(draw, 35.155, 136.928, "新堀川", river_font, (0, 60, 160), offset=(10, -10))
+    river_font = get_font(32, bold=True)
+    draw_label(draw, 35.150, 136.878, "堀川", river_font, (0, 60, 160), offset=(0, -10))
+    draw_label(draw, 35.140, 136.918, "新堀川", river_font, (0, 60, 160), offset=(10, 0))
 
-    # 台地ラベル
-    plateau_font = get_font(48, bold=True)
-    draw_label(draw, 35.158, 136.910, "熱田台地", plateau_font, (140, 60, 0), offset=(-100, -30))
-    plateau_sub_font = get_font(22, bold=True)
-    draw_label(draw, 35.150, 136.910, "（洪積層 / 標高約10〜15m）",
-               plateau_sub_font, (120, 60, 0), offset=(-130, 30))
+    # 台地ラベル（中央：熱田台地）
+    plateau_font = get_font(60, bold=True)
+    draw_label(draw, 35.158, 136.908, "熱田台地", plateau_font, (140, 60, 0), offset=(-130, -40))
+    draw_label(draw, 35.150, 136.908, "（洪積層 / 熱田面）",
+               get_font(28, bold=True), (140, 60, 0), offset=(-130, 35))
 
-    # 低地ラベル（西・東）— 凡例と被らない位置に
-    lowland_font = get_font(26, bold=True)
-    draw_label(draw, 35.150, 136.870, "沖積低地\n（旧低湿地）",
-               lowland_font, (30, 70, 130), offset=(-80, -20))
-    draw_label(draw, 35.180, 136.935, "沖積低地",
-               lowland_font, (30, 70, 130), offset=(-50, -10))
+    # 大曽根面ラベル（熱田台地ではない、参考表示）
+    draw_label(draw, 35.195, 136.934, "大曽根面",
+               get_font(30, bold=True), (130, 100, 30), offset=(-70, -10))
+    draw_label(draw, 35.187, 136.934, "（同じく洪積層／参考）",
+               get_font(20, bold=True), (130, 100, 30), offset=(-100, 25))
+
+    # 標高表示（台地内・北部 / 南部）
+    elev_font = get_font(24, bold=True)
+    draw_label(draw, 35.183, 136.905, "標高 約10〜15m",
+               elev_font, (90, 50, 10), offset=(-145, -45))
+    draw_label(draw, 35.130, 136.902, "標高 5m未満",
+               elev_font, (140, 30, 30), offset=(-145, 0))
+    draw_label(draw, 35.126, 136.913, "（南東端 約2m）",
+               get_font(20, bold=True), (140, 30, 30), offset=(24, 28))
+
+    # 低地ラベル（西・東）
+    lowland_font = get_font(34, bold=True)
+    draw_label(draw, 35.155, 136.868, "沖積低地\n（旧低湿地）",
+               lowland_font, (30, 70, 130), offset=(-110, -20))
+    draw_label(draw, 35.140, 136.940, "沖積\n低地",
+               lowland_font, (30, 70, 130), offset=(-30, -20))
 
     # ランドマーク
-    landmark_font = get_font(22, bold=True)
+    landmark_font = get_font(30, bold=True)
     for name, lat, lon, color, off in LANDMARKS:
         draw_marker_with_label(draw, lat, lon, name, color, landmark_font, off)
 
     # データセンター
-    dc_font = get_font(20, bold=True)
+    dc_font = get_font(28, bold=True)
     for name, lat, lon, color, off in DATA_CENTERS:
         draw_marker_with_label(draw, lat, lon, name, color, dc_font, off)
 
     # 凡例（下端）
     legend_x = MAP_MARGIN + 10
-    legend_y = IMG_H - 280
-    legend_w = 320
-    legend_h = 240
+    legend_y = IMG_H - 380
+    legend_w = 470
+    legend_h = 340
     draw.rectangle((legend_x, legend_y, legend_x + legend_w, legend_y + legend_h),
                    fill=(255, 255, 255), outline="black", width=2)
-    legend_title_font = get_font(20, bold=True)
-    draw.text((legend_x + 12, legend_y + 8), "凡例", fill="black", font=legend_title_font)
+    legend_title_font = get_font(28, bold=True)
+    draw.text((legend_x + 14, legend_y + 10), "凡例", fill="black", font=legend_title_font)
 
-    fl = get_font(17, bold=True)
+    fl = get_font(22, bold=True)
     items = [
-        ((255, 200, 110), "熱田台地（洪積層）", "fill"),
+        ((255, 200, 110), "熱田台地（洪積層／熱田面）", "fill"),
+        ((240, 220, 170), "大曽根面（同じく洪積層・参考）", "fill"),
         ((190, 218, 240), "沖積低地（液状化リスク高）", "fill"),
         ((0, 100, 220),  "河川（堀川／新堀川）", "line"),
         ((192, 0, 0),    "主要ランドマーク", "marker"),
         ((112, 48, 160), "データセンター", "marker"),
     ]
-    yy = legend_y + 38
+    yy = legend_y + 50
     for color, label, kind in items:
         if kind == "fill":
-            draw.rectangle((legend_x + 14, yy, legend_x + 38, yy + 24), fill=color, outline="black")
+            draw.rectangle((legend_x + 18, yy, legend_x + 48, yy + 30), fill=color, outline="black")
         elif kind == "line":
-            draw.line((legend_x + 14, yy + 12, legend_x + 38, yy + 12), fill=color, width=5)
+            draw.line((legend_x + 18, yy + 15, legend_x + 48, yy + 15), fill=color, width=6)
         elif kind == "marker":
-            cx, cy = legend_x + 26, yy + 12
-            draw.ellipse((cx - 8, cy - 8, cx + 8, cy + 8), fill=color, outline="white", width=2)
-        draw.text((legend_x + 50, yy + 2), label, fill="black", font=fl)
-        yy += 36
+            cx, cy = legend_x + 33, yy + 15
+            draw.ellipse((cx - 10, cy - 10, cx + 10, cy + 10), fill=color, outline="white", width=2)
+        draw.text((legend_x + 60, yy + 2), label, fill="black", font=fl)
+        yy += 46
 
-    draw_compass(img, IMG_W - 90, TITLE_BAND_H + 70, size=60)
-    draw_scale_bar(img, IMG_W - 200, IMG_H - 80, length_km=1.0)
+    draw_compass(img, IMG_W - 100, TITLE_BAND_H + 90, size=80)
+    draw_scale_bar(img, IMG_W - 260, IMG_H - 100, length_km=1.0)
 
     draw_title(img, "熱田台地と名古屋の主要拠点・データセンター",
-               "経緯度に基づく模式図（堀川・新堀川を境界に台地と低地を表現）")
+               "経緯度に基づく模式図（参考：北東の大曽根面も洪積層だが熱田台地ではない）")
     draw_credit(img, "作図：本LT資料用 概念図（地形は模式化）")
 
     out = os.path.join(OUT_DIR, "map_atsuta_plateau.png")
@@ -258,7 +304,12 @@ def render_liquefaction_map():
     draw = ImageDraw.Draw(img)
     draw.rectangle((0, TITLE_BAND_H, IMG_W, IMG_H), fill=(225, 110, 110))
 
-    # 台地（リスク低 = 緑）を重ねる
+    # 大曽根面（参考：同じく洪積層でリスク低）— 淡い緑
+    draw_filled_polygon(img, OZONE_POLYGON,
+                        fill=(180, 220, 180, 255),
+                        outline=(80, 140, 90), outline_width=3)
+
+    # 熱田台地（リスク低 = 緑）を重ねる
     draw_filled_polygon(img, PLATEAU_POLYGON,
                         fill=(110, 200, 130, 255),
                         outline=(20, 110, 40), outline_width=4)
@@ -270,45 +321,45 @@ def render_liquefaction_map():
     draw_river(draw, SHIN_HORIKAWA, color=(0, 100, 220), width=5)
 
     # 大ラベル
-    big_font = get_font(44, bold=True)
-    sub_font = get_font(24, bold=True)
+    big_font = get_font(60, bold=True)
+    sub_font = get_font(30, bold=True)
 
-    draw_label(draw, 35.158, 136.910, "リスク低",
-               big_font, (10, 90, 30), offset=(-90, -30))
-    draw_label(draw, 35.148, 136.910, "（熱田台地 / 洪積層）",
-               sub_font, (10, 90, 30), offset=(-130, 30))
+    draw_label(draw, 35.160, 136.908, "リスク低",
+               big_font, (10, 90, 30), offset=(-130, -50))
+    draw_label(draw, 35.148, 136.908, "（熱田台地 / 洪積層）",
+               sub_font, (10, 90, 30), offset=(-160, 40))
 
     draw_label(draw, 35.180, 136.870, "リスク高",
-               big_font, (140, 20, 20), offset=(-80, -10))
-    draw_label(draw, 35.172, 136.870, "（沖積低地 + 地盤沈下）",
-               sub_font, (140, 20, 20), offset=(-140, 35))
+               big_font, (140, 20, 20), offset=(-130, -20))
+    draw_label(draw, 35.168, 136.870, "（沖積低地 + 地盤沈下）",
+               sub_font, (140, 20, 20), offset=(-180, 50))
 
-    draw_label(draw, 35.180, 136.935, "リスク高",
-               big_font, (140, 20, 20), offset=(-80, -10))
+    draw_label(draw, 35.145, 136.940, "リスク高",
+               big_font, (140, 20, 20), offset=(-150, -10))
 
     # ランドマーク
-    landmark_font = get_font(22, bold=True)
+    landmark_font = get_font(30, bold=True)
     for name, lat, lon, color, off in LANDMARKS:
         draw_marker_with_label(draw, lat, lon, name, color, landmark_font, off)
 
     # 凡例
     legend_x = MAP_MARGIN + 10
-    legend_y = IMG_H - 180
-    legend_w = 300
-    legend_h = 130
+    legend_y = IMG_H - 240
+    legend_w = 380
+    legend_h = 180
     draw.rectangle((legend_x, legend_y, legend_x + legend_w, legend_y + legend_h),
                    fill=(255, 255, 255), outline="black", width=2)
-    fl = get_font(20, bold=True)
-    draw.text((legend_x + 12, legend_y + 8), "液状化リスク", fill="black", font=fl)
-    fl_item = get_font(18, bold=True)
-    draw.rectangle((legend_x + 14, legend_y + 44, legend_x + 38, legend_y + 68),
+    fl = get_font(28, bold=True)
+    draw.text((legend_x + 14, legend_y + 10), "液状化リスク", fill="black", font=fl)
+    fl_item = get_font(24, bold=True)
+    draw.rectangle((legend_x + 18, legend_y + 60, legend_x + 50, legend_y + 90),
                    fill=(110, 200, 130), outline="black")
-    draw.text((legend_x + 50, legend_y + 46), "低（洪積層）", fill="black", font=fl_item)
-    draw.rectangle((legend_x + 14, legend_y + 80, legend_x + 38, legend_y + 104),
+    draw.text((legend_x + 64, legend_y + 62), "低（洪積層）", fill="black", font=fl_item)
+    draw.rectangle((legend_x + 18, legend_y + 110, legend_x + 50, legend_y + 140),
                    fill=(225, 110, 110), outline="black")
-    draw.text((legend_x + 50, legend_y + 82), "高（沖積低地）", fill="black", font=fl_item)
+    draw.text((legend_x + 64, legend_y + 112), "高（沖積低地）", fill="black", font=fl_item)
 
-    draw_compass(img, IMG_W - 90, TITLE_BAND_H + 70, size=60)
+    draw_compass(img, IMG_W - 100, TITLE_BAND_H + 90, size=80)
 
     draw_title(img, "名古屋中心部の液状化リスク概念図",
                "熱田台地（洪積層）と沖積低地のリスク差を模式的に表現")
